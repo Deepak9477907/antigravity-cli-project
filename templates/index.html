@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A premium real-time tracker for Google Cloud BigQuery Release Notes, with advanced filtering, search, and integrated Twitter sharing capabilities.">
+    <title>BigQuery Release Radar - Google Cloud Release Tracker</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="header-main">
+                <div class="logo-area">
+                    <div class="logo-glow"></div>
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2005/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#gradient-logo)" />
+                        <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="url(#gradient-logo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="gradient-logo" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#4285F4" />
+                                <stop offset="0.5" stop-color="#8AB4F8" />
+                                <stop offset="1" stop-color="#AD53F7" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="logo-text">
+                        <h1>BigQuery <span>Release Radar</span></h1>
+                        <span class="logo-subtext">Google Cloud Platform Tracker</span>
+                    </div>
+                </div>
+                
+                <div class="header-status-panel">
+                    <div class="status-indicator" id="status-pill">
+                        <span class="indicator-dot pulse"></span>
+                        <span class="indicator-text">Live Syncing</span>
+                    </div>
+                    <div class="last-updated-text" id="last-updated">Last checked: Just now</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <main class="main-content">
+            
+            <!-- LEFT PANEL: CONTROLS & STATS -->
+            <aside class="control-panel">
+                <section class="panel-section search-section">
+                    <h2>Search Updates</h2>
+                    <div class="search-box">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="search-input" placeholder="Type query keyword..." autocomplete="off">
+                        <button id="clear-search-btn" class="clear-btn" style="display:none;">&times;</button>
+                    </div>
+                </section>
+
+                <section class="panel-section filter-section">
+                    <h2>Filter by Category</h2>
+                    <div class="category-filters" id="category-filter-list">
+                        <button class="filter-btn active" data-category="all" id="btn-filter-all">
+                            <span class="filter-count" id="count-all">0</span>
+                            All Updates
+                        </button>
+                        <button class="filter-btn" data-category="Feature" id="btn-filter-feature">
+                            <span class="filter-count" id="count-feature">0</span>
+                            Features
+                        </button>
+                        <button class="filter-btn" data-category="Issue" id="btn-filter-issue">
+                            <span class="filter-count" id="count-issue">0</span>
+                            Issues
+                        </button>
+                        <button class="filter-btn" data-category="Changed" id="btn-filter-changed">
+                            <span class="filter-count" id="count-changed">0</span>
+                            Changes
+                        </button>
+                        <button class="filter-btn" data-category="Deprecated" id="btn-filter-deprecated">
+                            <span class="filter-count" id="count-deprecated">0</span>
+                            Deprecations
+                        </button>
+                    </div>
+                </section>
+
+                <section class="panel-section stats-section">
+                    <h2>Activity Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-val" id="stat-total-count">0</div>
+                            <div class="stat-lbl">Total Cached</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-val" id="stat-recent-count">0</div>
+                            <div class="stat-lbl">This Month</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel-section action-section">
+                    <button class="primary-action-btn" id="refresh-btn" title="Refresh BigQuery Release Notes Feed">
+                        <svg class="btn-spinner-icon" id="btn-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                        </svg>
+                        <span id="btn-text">Refresh Feed</span>
+                    </button>
+                </section>
+            </aside>
+
+            <!-- RIGHT PANEL: TIMELINE -->
+            <section class="timeline-container" aria-label="BigQuery Releases Timeline">
+                
+                <!-- TOP BAR FOR ACTIONS -->
+                <div class="timeline-header">
+                    <div class="timeline-title-area">
+                        <h2>Release Timeline</h2>
+                        <span class="timeline-subtitle" id="timeline-subtitle-text">Showing all updates</span>
+                    </div>
+                    <div class="timeline-actions">
+                        <button class="secondary-action-btn" id="btn-select-all" title="Select all visible releases">Select All</button>
+                        <button class="secondary-action-btn" id="btn-clear-all" title="Deselect all releases" style="display:none;">Deselect All</button>
+                    </div>
+                </div>
+
+                <!-- LOADING STATE -->
+                <div class="timeline-loading-state" id="loading-state">
+                    <div class="loader-ripple">
+                        <div></div>
+                        <div></div>
+                    </div>
+                    <p>Fetching releases from Google Cloud...</p>
+                </div>
+
+                <!-- EMPTY STATE -->
+                <div class="timeline-empty-state" id="empty-state" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    <h3>No matching release notes found</h3>
+                    <p>Try clearing your search filters or force refresh the feed.</p>
+                    <button class="reset-filters-btn" id="reset-filters-btn">Reset Filters</button>
+                </div>
+
+                <!-- REAL TIMELINE -->
+                <div class="timeline-wrapper" id="timeline-wrapper">
+                    <!-- Cards will be dynamically inserted here by JavaScript -->
+                </div>
+            </section>
+        </main>
+
+        <!-- FLOATING COMBINED TWEET DOCK -->
+        <div class="floating-dock-container" id="floating-dock" style="display:none;">
+            <div class="floating-dock">
+                <div class="dock-info">
+                    <span class="dock-count-badge" id="selected-count-badge">0</span>
+                    <span class="dock-text">Updates selected for tweet</span>
+                </div>
+                <div class="dock-actions">
+                    <button class="dock-btn-clear" id="dock-btn-clear">Cancel</button>
+                    <button class="dock-btn-tweet" id="dock-btn-tweet">
+                        <svg viewBox="0 0 24 24" class="x-icon" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Tweet Combined
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TWEET COMPOSER MODAL (FOR EDITING & CUSTOMIZING PREVIEW) -->
+        <div class="modal-overlay" id="tweet-modal" style="display:none;">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>Compose Tweet</h3>
+                    <button class="modal-close" id="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="char-count-warning" id="tweet-warning" style="display:none;">
+                        Note: The text is longer than 280 characters and will be formatted nicely for Twitter.
+                    </div>
+                    <div class="tweet-composer-area">
+                        <textarea id="tweet-textarea" rows="6" placeholder="What's happening?"></textarea>
+                        <div class="tweet-meta-info">
+                            <span class="char-counter" id="char-counter">0 / 280</span>
+                        </div>
+                    </div>
+                    
+                    <div class="tweet-preview-section">
+                        <h4>Social Link Attachment:</h4>
+                        <div class="tweet-preview-link">
+                            <div class="preview-domain">docs.cloud.google.com</div>
+                            <div class="preview-title">Google BigQuery Release Notes</div>
+                            <div class="preview-url" id="tweet-preview-url">https://docs.cloud.google.com/...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn-cancel" id="modal-cancel-btn">Discard</button>
+                    <button class="modal-btn-tweet" id="modal-send-btn">
+                        <svg viewBox="0 0 24 24" class="x-icon-white" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Open Twitter Web
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
